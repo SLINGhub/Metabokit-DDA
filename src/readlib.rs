@@ -128,20 +128,20 @@ fn read_lib(x: &str, ent_vec: &mut Vec<Ent>) {
         };
         let lsp1 = lsp1.trim();
         match lsp0.trim().to_uppercase().as_str() {
-            "NAME" => name = lsp1.to_string(),
-            "FORMULA" => formu = lsp1.to_string(),
+            "NAME" => lsp1.clone_into(&mut name),
+            "FORMULA" => lsp1.clone_into(&mut formu),
             "PRECURSORMZ" => mmass = lsp1.parse().unwrap(),
             "PRECURSORTYPE" | "PRECURSOR_TYPE" => {
                 (adduct, charge) = re.captures(lsp1).map_or_else(
-                    || (lsp1.to_string(), 1),
-                    |caps| (caps[1].to_string(), caps[2].parse().unwrap_or(1)),
+                    || (lsp1.to_owned(), 1),
+                    |caps| (caps[1].to_owned(), caps[2].parse().unwrap_or(1)),
                 );
                 if !name.contains(&adduct) {
                     name = format!("{name} {adduct}");
                 }
             }
             "RETENTIONTIME" => rt = lsp1.parse().ok(),
-            "INCHIKEY" => inchik = lsp1.to_string(),
+            "INCHIKEY" => lsp1.clone_into(&mut inchik),
             "NUM PEAKS" => {
                 use std::fmt::Write;
                 write!(&mut name, " ({libpath})").unwrap();
@@ -196,8 +196,8 @@ fn read_mz_rt(x: &str, ent_vec: &mut Vec<Ent>) {
         rdr.into_records()
             .map(std::result::Result::unwrap)
             .map(|x| {
-                let mut name = x[0].to_string();
-                let adduct = x[1].to_string();
+                let mut name = x[0].to_owned();
+                let adduct = x[1].to_owned();
                 if !name.contains(&adduct) {
                     name = format!("{name} {adduct}");
                 }

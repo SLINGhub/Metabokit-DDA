@@ -26,7 +26,7 @@ pub fn fill(param_t: &crate::Param, tab_name: &str) -> Result<(), Box<dyn Error>
         .map(|(ii, mzml_f)| {
             rdr.records().reader_mut().seek(pos.clone())?;
             let bn = mzml_f.file_name().unwrap().to_str().unwrap();
-            let ms1_scans = crate::common::get_ms1(bn)?;
+            let (_, ms1_scans) = crate::common::get_ms1(bn)?;
             Ok(rdr
                 .records()
                 .zip(&mz_rt_l)

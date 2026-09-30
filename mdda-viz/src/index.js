@@ -3,11 +3,14 @@ const { invoke } = window.__TAURI__.core;
 const load_all = async function () {
   const mzml_Object = await invoke("get_mzml_list");
   const mzml_sel = document.getElementById("mzml_sel");
-  mzml_sel.innerHTML = "";
-  mzml_sel.options[0] = new Option("--Select--");
-  mzml_Object.forEach((x, i) => {
-    mzml_sel.options[mzml_sel.options.length] = new Option(x, i);
-  });
+  const frag = document.createDocumentFragment();
+  frag.appendChild(new Option("--- Select ---"));
+  for (let i = 0; i < mzml_Object.length; i++) {
+    frag.appendChild(new Option(mzml_Object[i], i));
+  }
+  mzml_sel.textContent = "";
+  mzml_sel.appendChild(frag);
+
   const param_t = await invoke("read_param");
   mzml_sel.onchange = function () {
     gen(mzml_Object[this.value], param_t);

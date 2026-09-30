@@ -53,10 +53,10 @@ pub fn read_param() -> Result<crate::Param, Box<dyn Error>> {
             .as_array()
             .unwrap()
             .iter()
-            .map(|x| x.as_str().unwrap().to_string())
+            .map(|x| x.as_str().unwrap().to_owned())
             .collect(),
         ms1tol: ms1tol_unit[0].as_float().unwrap() as f32,
-        ms1tol_u: ms1tol_unit[1].as_str().unwrap().to_string(),
+        ms1tol_u: ms1tol_unit[1].as_str().unwrap().to_owned(),
         ms2tol: value["ms2tol"].as_float().unwrap() as f32,
         mz_shift: value["mz_shift"].as_float().unwrap() as f32,
         isf_rt_diff: 0.04,
@@ -82,7 +82,7 @@ pub fn read_param() -> Result<crate::Param, Box<dyn Error>> {
             .as_array()
             .unwrap()
             .iter()
-            .map(|x| x.as_str().unwrap().to_string())
+            .map(|x| x.as_str().unwrap().to_owned())
             .collect(),
         match_n_fragments: usize::try_from(value["match_n_fragments"].as_integer().unwrap())?,
         i_rt: value["integration_RT"].as_float().unwrap() as f32,
@@ -103,22 +103,57 @@ unpack!(f32, unpack_f32);
 unpack!(u32, unpack_u32);
 unpack!(u8, unpack_u8);
 
-pub fn get_ms1(bn: &str) -> Result<Vec<crate::Ms>, Box<dyn Error>> {
+pub fn unpack_string(file: &mut BufReader<File>) -> Result<String, Box<dyn Error>> {
+    let mut str_buf = Vec::new();
+    file.read_until(b'\0', &mut str_buf)?;
+    str_buf.pop().ok_or("unpack_string")?;
+    Ok(String::from_utf8(str_buf)?)
+}
+pub fn unpack_f32_2(file: &mut BufReader<File>) -> io::Result<(f32, f32)> {
+    let mut buffer = [0; std::mem::size_of::<f32>()];
+    file.read_exact(&mut buffer)?;
+    let a = f32::from_le_bytes(buffer);
+    file.read_exact(&mut buffer)?;
+    Ok((a, f32::from_le_bytes(buffer)))
+}
+
+pub fn get_ms1(bn: &str) -> Result<(String, Vec<crate::Ms>), Box<dyn Error>> {
     let mut ms1_scans = Vec::new();
     let file_path = std::path::Path::new(crate::MISCDIR).join(format!("ms1_{bn}.bin"));
     let buf = &mut BufReader::new(File::open(file_path)?);
-    buf.skip_until(b'\0')?;
+    let ts = unpack_string(buf)?;
     while let Ok(rt) = unpack_f32(buf) {
         let len0 = unpack_u32(buf)?;
         ms1_scans.push(crate::Ms {
             rt,
             mz_i: (0..len0)
-                .map(|_| (unpack_f32(buf).unwrap(), unpack_f32(buf).unwrap()))
-                .collect(),
+                .map(|_| unpack_f32_2(buf))
+                .collect::<Result<_, _>>()?,
         });
     }
-    Ok(ms1_scans)
+    Ok((ts, ms1_scans))
 }
+
+pub fn get_ms2(bn: &str) -> Result<Vec<crate::Msms>, Box<dyn Error>> {
+    let mut ms2_scans = Vec::new();
+    let file_path = std::path::Path::new(crate::MISCDIR).join(format!("ms2_{bn}.bin"));
+    let buf = &mut BufReader::new(File::open(file_path)?);
+    while let Ok(ms1mz) = unpack_f32(buf) {
+        let rt = unpack_f32(buf)?;
+        let ce = unpack_f32(buf)?;
+        let len0 = unpack_u32(buf)?;
+        ms2_scans.push(crate::Msms {
+            ms1mz,
+            rt,
+            mz_i_l: (0..len0)
+                .map(|_| unpack_f32_2(buf))
+                .collect::<Result<_, _>>()?,
+            ce,
+        });
+    }
+    Ok(ms2_scans)
+}
+
 #[must_use]
 pub fn get_chrom(cpd: (f32, f32, f32), scans: &[crate::Ms], tol: f32) -> Vec<(f32, f32)> {
     let (mz, rt, sc) = cpd;

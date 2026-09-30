@@ -100,8 +100,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|(i, mzml_f)| {
             let bn = mzml_f.file_name().unwrap().to_str().unwrap();
             println!("{bn}");
-            let (ms1_scans, mut ms2_scans, ts) = parse::mzml(mzml_f).unwrap();
+            parse::mzml(mzml_f).unwrap();
+            let mut ms2_scans = common::get_ms2(bn).unwrap();
             ms2_scans.sort_unstable_by(|a, b| a.ms1mz.partial_cmp(&b.ms1mz).unwrap());
+            let (ts, ms1_scans) = common::get_ms1(bn).unwrap();
             if ms2_scans.is_empty() {
                 println!("No MSMS in {bn}");
                 ms2_scans.push(Msms {

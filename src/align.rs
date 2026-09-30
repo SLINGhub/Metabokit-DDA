@@ -619,20 +619,20 @@ fn read_inchik() -> Vec<Iddat> {
         .into_records()
         .map(std::result::Result::unwrap)
         .map(|x| Iddat {
-            inchikey: x[0].to_string(),
-            acc_hmdb: x[1].to_string(),
-            name_hmdb: x[2].to_string(),
-            super_hmdb: x[3].to_string(),
-            class_hmdb: x[4].to_string(),
-            sub_hmdb: x[5].to_string(),
-            lm_id: x[6].to_string(),
-            name_lm: x[7].to_string(),
-            abb_lm: x[8].to_string(),
-            core_lm: x[9].to_string(),
-            main_lm: x[10].to_string(),
-            sub_lm: x[11].to_string(),
-            abb_c_lm: x[12].to_string(),
-            formu: x[13].to_string(),
+            inchikey: x[0].to_owned(),
+            acc_hmdb: x[1].to_owned(),
+            name_hmdb: x[2].to_owned(),
+            super_hmdb: x[3].to_owned(),
+            class_hmdb: x[4].to_owned(),
+            sub_hmdb: x[5].to_owned(),
+            lm_id: x[6].to_owned(),
+            name_lm: x[7].to_owned(),
+            abb_lm: x[8].to_owned(),
+            core_lm: x[9].to_owned(),
+            main_lm: x[10].to_owned(),
+            sub_lm: x[11].to_owned(),
+            abb_c_lm: x[12].to_owned(),
+            formu: x[13].to_owned(),
         })
         .collect();
     iddat_d.sort_unstable_by(|a, b| a.inchikey.cmp(&b.inchikey));
@@ -655,7 +655,7 @@ fn read_name_f() -> Vec<(String, String)> {
     let mut name_f: Vec<_> = rdr
         .into_records()
         .map(std::result::Result::unwrap)
-        .map(|x| (x[0].to_string(), x[1].to_string()))
+        .map(|x| (x[0].to_owned(), x[1].to_owned()))
         .collect();
     name_f.sort_unstable_by(|a, b| a.0.cmp(&b.0));
     name_f
